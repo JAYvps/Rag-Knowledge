@@ -1,0 +1,70 @@
+server:
+  port: 8080
+
+spring:
+  profiles:
+    active: dev
+  ai:
+    openai:
+      api-key: ${AI_KEY}
+      base-url: ${AI_BASE_URL}
+      chat:
+        options:
+          model: ${AI_MODEL:qwen3.6-flash}
+          temperature: 0.7
+          #embedding配置
+      embedding:
+          options:
+            model: text-embedding-v3
+
+  # MySQL
+  datasource:
+    url: jdbc:mysql://localhost:3306/rag_kb?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: root
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
+  # 文件上传限制
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# MyBatis-Plus
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl   # 开发环境打印SQL
+  global-config:
+    db-config:
+      id-type: auto
+
+# ========== 语雀配置 ==========
+yuque:
+  token: ${YUQUE_TOKEN}
+  base-url: https://www.yuque.com/api/v2
+  namespace: ${YUQUE_NAMESPACE:daluosishidabuguorenjiade}
+
+# JWT
+jwt:
+  secret: ${JWT_SECRET:ThisIsASecretKeyForJwtTokenGeneration2024PleaseChangeInProduction}
+  expiration: 86400000   # 24小时(毫秒)
+
+# 文件上传路径
+upload:
+  path: ${UPLOAD_PATH:./data/upload}
+  max-size: 10485760     # 10MB
+
+# ========== 本地向量存储配置 ==========
+vector:
+  store:
+    # 向量数据文件存储路径
+    path: ${VECTOR_STORE_PATH:./data/vectors}
+
