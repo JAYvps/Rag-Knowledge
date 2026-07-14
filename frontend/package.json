@@ -11,13 +11,16 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.16.1",
+    "docx-preview": "^0.4.0",
     "element-plus": "^2.14.0",
     "gsap": "^3.15.0",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.2.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.34",
-    "vue-router": "^4.6.4"
+    "vue-pdf-embed": "^2.1.5",
+    "vue-router": "^4.6.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.6",

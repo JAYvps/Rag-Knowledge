@@ -1,15 +1,27 @@
 // ============ controller/DocController.java ============
 package com.ragkb.controller;
 
+import cn.hutool.http.server.HttpServerResponse;
 import com.ragkb.common.Result;
 import com.ragkb.entity.UserDocument;
 import com.ragkb.security.UserDetailsImpl;
 import com.ragkb.service.DocUploadService;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.HttpMediaTypeException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -82,6 +94,59 @@ public class DocController {
                 "wordCount", doc.getWordCount() != null ? doc.getWordCount() : 0,
                 "errorMsg", doc.getErrorMsg() != null ? doc.getErrorMsg() : ""
         ));
+    }
+
+//    @GetMapping("/preview")
+//    public ResponseEntity<byte[]> preview(@RequestParam("id") Long id) throws IOException {
+//        UserDocument doc = docUploadService.getById(id);
+//        String filePath = doc.getFilePath();
+//        File file = new File(filePath);
+//        if (!file.exists()) {
+//            return ResponseEntity.notFound().build();
+//        }
+//        String fileName = file.getName();
+//        byte[] bytes = Files.readAllBytes(file.toPath());
+//        // 根据后缀手动设置 Content-Type
+//        String contentType = getContentType(fileName);
+//        return ResponseEntity.ok()
+//                .contentType(MediaType.parseMediaType(contentType))
+//                .header(HttpHeaders.CACHE_CONTROL,
+//                        "no-store, no-cache; filename=" + URLEncoder.encode(fileName, StandardCharsets.UTF_8))
+//                .body(bytes);
+//    }
+
+    @GetMapping("/preview")
+    public void preview(@RequestParam("id") Long id, HttpServletResponse response) throws IOException {
+        UserDocument doc = docUploadService.getById(id);
+        String filePath = doc.getFilePath();
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return ;
+        }
+        String fileName = file.getName();
+        byte[] bytes = Files.readAllBytes(file.toPath());
+        // 根据后缀手动设置 Content-Type
+        String contentType = "Content-Disposition: inline";
+        response.setContentType(contentType);
+        response.setHeader("Content-Disposition", "inline; filename=" + URLEncoder.encode(fileName, "UTF-8"));
+        response.setHeader("Cache-Control", "no-store, no-cache");
+        response.setContentLength(bytes.length);
+        response.getOutputStream().write(bytes);
+        response.getOutputStream().flush();
+    }
+
+    private String getContentType(String fileName) {
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        return switch (ext) {
+            case "pdf"  -> "application/pdf";
+            case "png"  -> "image/png";
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "gif"  -> "image/gif";
+            case "txt"  -> "text/plain";
+            case "html" -> "text/html";
+            case "csv"  -> "text/csv";
+            default     -> "application/octet-stream";
+        };
     }
 
     /**

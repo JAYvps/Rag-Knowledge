@@ -7,6 +7,15 @@
   - Clean table with muted accents
 -->
 <template>
+  <el-dialog v-model="visible" title="预览" width="80%" destroy-on-close>
+    <div v-loading="previewLoading">
+      <vue-pdf-embed v-show="fileType === 'pdf'" :source="previewUrl" style="height: 70vh;" />
+      <div v-show="fileType === 'docx'" ref="docxRef" style="height: 70vh; overflow: auto;"></div>
+      <div v-show="['xlsx', 'xls'].includes(fileType)" ref="excelRef" style="height: 70vh; overflow: auto;"></div>
+      <pre v-show="['txt', 'md'].includes(fileType)" style="height: 70vh; overflow: auto;">{{ textContent }}</pre>
+    </div>
+  </el-dialog>
+
   <div class="my-docs">
     <!-- Upload area -->
     <div class="upload-section">
@@ -112,21 +121,25 @@
 
         <el-table-column label="操作" width="100" align="center">
           <template #default="{ row }">
-            <el-popconfirm
-              title="确定删除此文档？删除后向量数据也会被清除。"
-              confirm-button-text="删除"
-              cancel-button-text="取消"
-              @confirm="handleDelete(row.id)"
-            >
-              <template #reference>
-                <el-button type="danger" text size="small" class="delete-btn">
-                  删除
-                </el-button>
-              </template>
-            </el-popconfirm>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <el-button type="primary" text size="small" @click="handlePreview(row.id, row.fileName)">
+                预览
+              </el-button>
+              <el-popconfirm
+                  title="确定删除此文档？删除后向量数据也会被清除。"
+                  confirm-button-text="删除"
+                  cancel-button-text="取消"
+                  @confirm="handleDelete(row.id)"
+              >
+                <template #reference>
+                  <el-button type="danger" text size="small">删除</el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
       </el-table>
+
 
       <div v-if="docs.length === 0 && !loading" class="empty-docs">
         <el-icon :size="40" color="#d6d3d1"><Document /></el-icon>
@@ -137,9 +150,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { uploadDoc, getDocList, deleteDoc } from '../../api/doc'
 import { ElMessage } from 'element-plus'
+import VuePdfEmbed from 'vue-pdf-embed'
+import { renderAsync } from 'docx-preview'
+import * as XLSX from 'xlsx'
 
 const docs = ref([])
 const loading = ref(false)
@@ -147,8 +163,64 @@ const uploading = ref(false)
 const uploadTitle = ref('')
 const selectedFile = ref(null)
 const uploadRef = ref(null)
-
 let pollTimer = null
+const visible = ref(false)
+const fileType = ref('')
+const textContent = ref('')
+const previewLoading = ref(false)
+const docxRef = ref(null)
+const excelRef = ref(null)
+const previewUrl = ref('')
+const handlePreview = async (id, fileName) => {
+  const ext = fileName.split('.').pop().toLowerCase()
+  const token = localStorage.getItem('token')
+  previewLoading.value = true
+
+  try {
+    if (['xlsx', 'xls'].includes(ext)) {
+      const res = await fetch(`/api/doc/preview?id=${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const buffer = await res.arrayBuffer()
+      const workbook = XLSX.read(buffer, { type: 'array' })
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const html = XLSX.utils.sheet_to_html(sheet)
+      fileType.value = ext
+      visible.value = true
+      await nextTick()
+      excelRef.value.innerHTML = html
+    } else if (ext === 'docx') {
+      const res = await fetch(`/api/doc/preview?id=${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const blob = await res.blob()
+      fileType.value = ext
+      visible.value = true
+      await nextTick()
+      await renderAsync(blob, docxRef.value)
+    } else if (ext === 'pdf') {
+      const res = await fetch(`/api/doc/preview?id=${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const blob = await res.blob()
+      fileType.value = ext
+      previewUrl.value = URL.createObjectURL(blob)
+      visible.value = true
+    } else if (['txt', 'md'].includes(ext)) {
+      const res = await fetch(`/api/doc/preview?id=${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      textContent.value = await res.text()
+      fileType.value = ext
+      visible.value = true
+    }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('预览失败：' + e.message)
+  } finally {
+    previewLoading.value = false
+  }
+}
 
 onMounted(async () => {
   await loadDocs()
@@ -225,6 +297,7 @@ function formatTime(time) {
   if (!time) return '-'
   return new Date(time).toLocaleString('zh-CN')
 }
+
 </script>
 
 <style scoped>
