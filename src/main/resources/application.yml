@@ -6,7 +6,7 @@ spring:
     active: dev
   ai:
     openai:
-      api-key: ${sk-611fd0d69a244fb0a3d941e5161fc4ce}
+      api-key: ${}
       base-url: ${AI_BASE_URL:https://llm-miv4nmllqj53ujdx.cn-beijing.maas.aliyuncs.com/compatible-mode/v1}
       chat:
         options:
