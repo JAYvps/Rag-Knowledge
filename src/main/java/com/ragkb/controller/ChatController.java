@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -44,6 +45,7 @@ public class ChatController {
             emitter.completeWithError(new RuntimeException("未登录"));
             return emitter;
         }
+
         SseEmitter emitter = new SseEmitter(120_000L);
 
         emitter.onTimeout(() -> {
@@ -178,13 +180,22 @@ public class ChatController {
 
     // ==================== 内部方法 ====================
 
-    private void sendSse(SseEmitter emitter, String eventName, Object data) {
-        try {
-            emitter.send(SseEmitter.event().name(eventName).data(data));
-        } catch (IOException | IllegalStateException e) {
-            log.warn("SSE推送失败: event={}, msg={}", eventName, e.getMessage());
-        }
+//    private void sendSse(SseEmitter emitter, String eventName, Object data) {
+//        try {
+//            emitter.send(SseEmitter.event().name(eventName).data(data));
+//        } catch (IOException | IllegalStateException e) {
+//            log.warn("SSE推送失败: event={}, msg={}", eventName, e.getMessage());
+//        }
+//    }
+private void sendSse(SseEmitter emitter, String eventName, Object data) {
+    try {
+        emitter.send(SseEmitter.event()
+                .name(eventName)
+                .data(data, MediaType.APPLICATION_JSON));
+    } catch (Exception e) {
+        log.debug("[SSE] send失败（流可能已关闭）: {}", e.getMessage());
     }
+}
 
     /**
      * 组装用户消息（含对话历史）
