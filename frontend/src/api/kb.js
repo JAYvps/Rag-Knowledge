@@ -15,3 +15,11 @@ export function getRepoList() {
 export function getDocList(repoId) {
     return request.get(`/kb/${repoId}/docs`)
 }
+
+/**
+ * 获取全局文档列表
+ * 返回所有管理员设为全局的文档
+ */
+export function getGlobalDocs() {
+    return request.get('/kb/global-docs')
+}

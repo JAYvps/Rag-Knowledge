@@ -157,16 +157,21 @@ public class DocController {
     /**
      * 管理员设置文档为全局/取消全局
      *
-     * PUT /api/admin/doc/{id}/global
+     * PUT /api/doc/{id}/global
      * Body: { "isGlobal": true/false }
      *
      * 仅管理员可操作，文档状态必须为"就绪"(status=2)
      */
-    @PutMapping("/admin/doc/{id}/global")
+    @PutMapping("/{id}/global")
     public Result<Void> setGlobal(
             @PathVariable Long id,
             @RequestBody Map<String, Boolean> body,
             @AuthenticationPrincipal UserDetailsImpl user) {
+        // 检查是否为管理员
+        if (user == null || !"ADMIN".equals(user.getRole())) {
+            return Result.fail("仅管理员可操作");
+        }
+        
         Boolean isGlobal = body.get("isGlobal");
         if (isGlobal == null) {
             return Result.fail("参数错误");

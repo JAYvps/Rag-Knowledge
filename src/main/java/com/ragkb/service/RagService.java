@@ -300,29 +300,59 @@ public class RagService {
 
             String sourceLabel;
             String docTitle;
+            String sourceType = meta.getOrDefault("sourceType", "user");
+            Long sourceId = null;
+            Long repoId = null;
+            Boolean isGlobal = false;
 
-            if ("yuque".equals(meta.getOrDefault("sourceType", ""))) {
+            if ("yuque".equals(sourceType)) {
                 sourceLabel = "企业知识库";
                 docTitle = meta.getOrDefault("repoName", "") + " / "
                         + meta.getOrDefault("docTitle", "");
+                sourceId = parseLong(meta.get("sourceId"));
+                repoId = parseLong(meta.get("repoId"));
             } else {
                 // user 类型文档
-                String isGlobal = meta.getOrDefault("isGlobal", "false");
-                if ("true".equals(isGlobal)) {
+                String globalFlag = meta.getOrDefault("isGlobal", "false");
+                isGlobal = "true".equals(globalFlag);
+                if (isGlobal) {
                     sourceLabel = "全局文档";
                 } else {
                     sourceLabel = "我的文档";
                 }
                 docTitle = meta.getOrDefault("docTitle", meta.getOrDefault("fileName", ""));
+                sourceId = parseLong(meta.get("sourceId"));
             }
 
             String snippet = r.content().length() > 200
                     ? r.content().substring(0, 200) + "..."
                     : r.content();
 
-            sources.add(new SourceRef(i + 1, sourceLabel, docTitle, snippet, r.score()));
+            SourceRef ref = new SourceRef();
+            ref.setIndex(i + 1);
+            ref.setSourceLabel(sourceLabel);
+            ref.setDocTitle(docTitle);
+            ref.setSnippet(snippet);
+            ref.setScore(r.score());
+            ref.setSourceType(sourceType);
+            ref.setSourceId(sourceId);
+            ref.setRepoId(repoId);
+            ref.setIsGlobal(isGlobal);
+            sources.add(ref);
         }
         return sources;
+    }
+
+    /**
+     * 安全解析Long
+     */
+    private Long parseLong(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**

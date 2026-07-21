@@ -85,11 +85,20 @@
                       引用来源 ({{ filteredReferences(msg.references).length }})
                     </span>
                   </template>
-                  <div v-for="ref in filteredReferences(msg.references)" :key="ref.index" class="ref-item">
+                  <div
+                      v-for="ref in filteredReferences(msg.references)"
+                      :key="ref.index"
+                      class="ref-item"
+                      :class="{ 'ref-item--clickable': ref.sourceType }"
+                      @click="handleRefClick(ref)"
+                  >
                     <span class="ref-index">[{{ ref.index }}]</span>
-                    <span class="ref-source">{{ ref.sourceLabel }}</span>
+                    <el-tag :type="ref.sourceType === 'yuque' ? 'primary' : 'success'" size="small" effect="plain">
+                      {{ ref.sourceLabel }}
+                    </el-tag>
                     <span class="ref-doc">{{ ref.displayTitle || ref.docTitle }}</span>
                     <span class="ref-score">{{ (ref.score * 100).toFixed(0) }}%</span>
+                    <el-icon class="ref-arrow" :size="12"><ArrowRight /></el-icon>
                   </div>
                 </el-collapse-item>
               </el-collapse>
@@ -156,11 +165,14 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { getConversations, getHistory, deleteConversation, askQuestion } from '../../api/chat'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
+
+const router = useRouter()
 
 const md = new MarkdownIt({
   highlight(str, lang) {
@@ -321,6 +333,20 @@ function handleKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
     sendMessage()
+  }
+}
+
+function handleRefClick(ref) {
+  if (ref.sourceType === 'yuque') {
+    // 语雀文档 - 跳转到知识库页面
+    if (ref.repoId) {
+      router.push({ path: '/kb', params: { repoId: ref.repoId } })
+    } else {
+      router.push('/kb')
+    }
+  } else if (ref.sourceType === 'user') {
+    // 用户文档 - 跳转到我的文档页面
+    router.push('/docs')
   }
 }
 
@@ -620,9 +646,19 @@ function scrollToBottom() {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 0;
+  padding: 6px 8px;
   font-size: 12px;
   line-height: 1.4;
+  border-radius: var(--radius-sm);
+  transition: all var(--duration) var(--ease);
+}
+
+.ref-item--clickable {
+  cursor: pointer;
+}
+
+.ref-item--clickable:hover {
+  background: var(--bg-muted);
 }
 
 .ref-index {
@@ -655,6 +691,16 @@ function scrollToBottom() {
   font-size: 11px;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
+}
+
+.ref-arrow {
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.ref-item--clickable:hover .ref-arrow {
+  opacity: 1;
 }
 
 /* Input area */

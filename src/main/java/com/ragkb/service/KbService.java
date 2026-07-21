@@ -2,8 +2,10 @@
 package com.ragkb.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.ragkb.entity.UserDocument;
 import com.ragkb.entity.YuqueRepo;
 import com.ragkb.entity.YuqueDocSync;
+import com.ragkb.mapper.UserDocumentMapper;
 import com.ragkb.mapper.YuqueRepoMapper;
 import com.ragkb.mapper.YuqueDocSyncMapper;
 import com.ragkb.yuque.YuqueClient;
@@ -24,6 +26,7 @@ public class KbService {
 
     private final YuqueRepoMapper yuqueRepoMapper;
     private final YuqueDocSyncMapper yuqueDocSyncMapper;
+    private final UserDocumentMapper userDocumentMapper;
 
     /**
      * 获取所有启用的知识库列表
@@ -43,6 +46,22 @@ public class KbService {
                         .orderByAsc(YuqueDocSync::getYuqueDocId)
         );
     }
+
+    /**
+     * 获取全局文档列表
+     *
+     * 返回所有管理员设为全局的文档（is_global=1, status=2）
+     * 所有用户都可以查看
+     */
+    public List<UserDocument> listGlobalDocs() {
+        return userDocumentMapper.selectList(
+                new LambdaQueryWrapper<UserDocument>()
+                        .eq(UserDocument::getIsGlobal, 1)
+                        .eq(UserDocument::getStatus, 2)
+                        .orderByDesc(UserDocument::getUpdatedAt)
+        );
+    }
+
     /**
      * 获取所有知识库（含禁用的，管理页面用）
      */

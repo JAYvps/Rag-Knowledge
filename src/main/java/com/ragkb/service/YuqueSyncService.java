@@ -690,6 +690,7 @@ public class YuqueSyncService {
                 metadata.put("docTitle", detail.getTitle());
                 metadata.put("repoName", repo.getName());
                 metadata.put("repoSlug", repo.getYuqueRepoSlug());
+                metadata.put("repoId", String.valueOf(repo.getId()));
                 metadata.put("chunkIndex", String.valueOf(i));
 
                 // 存入向量库

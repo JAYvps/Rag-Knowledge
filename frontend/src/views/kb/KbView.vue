@@ -18,13 +18,17 @@
       </div>
 
       <div class="kb-list">
+        <!-- 语雀知识库 -->
+        <div class="kb-section-header">
+          <span class="section-label">语雀知识库</span>
+        </div>
         <div
             v-for="repo in repos"
             :key="repo.id"
-            :class="['kb-item', { active: selectedRepo?.id === repo.id }]"
-            @click="selectRepo(repo)"
+            :class="['kb-item', { active: selectedType === 'yuque' && selectedRepo?.id === repo.id }]"
+            @click="selectRepo(repo, 'yuque')"
         >
-          <div class="kb-item-icon">
+          <div class="kb-item-icon kb-item-icon--yuque">
             <el-icon :size="16"><Collection /></el-icon>
           </div>
           <div class="kb-item-info">
@@ -39,7 +43,30 @@
           </div>
         </div>
 
-        <div v-if="repos.length === 0 && !loading" class="empty-sidebar">
+        <!-- 全局文档 -->
+        <template v-if="globalDocs.length > 0">
+          <div class="kb-section-header" style="margin-top: 12px;">
+            <span class="section-label">全局文档</span>
+            <el-tag size="small" type="success">{{ globalDocs.length }}</el-tag>
+          </div>
+          <div
+              :class="['kb-item', { active: selectedType === 'global' }]"
+              @click="selectRepo({ id: 'global', name: '全局文档' }, 'global')"
+          >
+            <div class="kb-item-icon kb-item-icon--global">
+              <el-icon :size="16"><Share /></el-icon>
+            </div>
+            <div class="kb-item-info">
+              <div class="kb-item-name">全局文档</div>
+              <div class="kb-item-meta">
+                <span>{{ globalDocs.length }} 篇文档</span>
+                <span class="status-tag status-tag--success">全员可搜</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <div v-if="repos.length === 0 && globalDocs.length === 0 && !loading" class="empty-sidebar">
           <el-icon :size="32" color="#d6d3d1"><Collection /></el-icon>
           <p>暂无知识库</p>
         </div>
@@ -64,11 +91,22 @@
           <el-table-column label="文档标题" min-width="300">
             <template #default="{ row }">
               <div class="doc-title">
-                <div class="doc-icon">
+                <div class="doc-icon" :class="`doc-icon--${row.sourceType}`">
                   <el-icon :size="14"><Document /></el-icon>
                 </div>
                 <span>{{ row.title }}</span>
               </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="来源" width="120" align="center">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.sourceType === 'yuque' ? 'primary' : 'success'"
+                size="small"
+                effect="plain"
+              >
+                {{ row.sourceLabel }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="字数" width="100" align="center">
@@ -81,7 +119,7 @@
               <span class="number-cell">{{ row.chunkCount || 0 }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="同步时间" width="180" align="center">
+          <el-table-column label="更新时间" width="180" align="center">
             <template #default="{ row }">
               <span class="time-cell">{{ formatTime(row.updatedAt) }}</span>
             </template>
@@ -108,12 +146,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { getRepoList, getDocList } from '../../api/kb'
+import { getRepoList, getDocList, getGlobalDocs } from '../../api/kb'
 import gsap from 'gsap'
 
 const route = useRoute()
 const repos = ref([])
+const globalDocs = ref([])
 const selectedRepo = ref(null)
+const selectedType = ref(null) // 'yuque' or 'global'
 const docs = ref([])
 const loading = ref(false)
 const docsLoading = ref(false)
@@ -123,11 +163,15 @@ let ctx
 onMounted(async () => {
   loading.value = true
   try {
-    const res = await getRepoList()
-    repos.value = res.data || []
+    const [reposRes, globalRes] = await Promise.all([
+      getRepoList(),
+      getGlobalDocs()
+    ])
+    repos.value = reposRes.data || []
+    globalDocs.value = globalRes.data || []
     if (route.params.repoId) {
       const repo = repos.value.find(r => r.id === Number(route.params.repoId))
-      if (repo) selectRepo(repo)
+      if (repo) selectRepo(repo, 'yuque')
     }
   } finally {
     loading.value = false
@@ -152,12 +196,29 @@ onMounted(async () => {
 
 onUnmounted(() => { ctx?.revert() })
 
-async function selectRepo(repo) {
+async function selectRepo(repo, type) {
   selectedRepo.value = repo
+  selectedType.value = type
   docsLoading.value = true
   try {
-    const res = await getDocList(repo.id)
-    docs.value = res.data || []
+    if (type === 'yuque') {
+      const res = await getDocList(repo.id)
+      docs.value = (res.data || []).map(d => ({
+        ...d,
+        sourceType: 'yuque',
+        sourceLabel: '语雀同步'
+      }))
+    } else if (type === 'global') {
+      docs.value = globalDocs.value.map(d => ({
+        id: d.id,
+        title: d.title || d.fileName,
+        wordCount: d.wordCount,
+        chunkCount: d.chunkCount,
+        updatedAt: d.updatedAt,
+        sourceType: 'global',
+        sourceLabel: '管理员上传'
+      }))
+    }
     nextTick(() => {
       gsap.from('.kb-main-header', { y: -12, opacity: 0, duration: 0.4, ease: 'power3.out' })
       if (docs.value.length > 0) {
@@ -229,6 +290,21 @@ function formatTime(time) {
   padding: 8px 12px;
 }
 
+.kb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 4px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .kb-item {
   display: flex;
   align-items: center;
@@ -259,6 +335,16 @@ function formatTime(time) {
   justify-content: center;
   flex-shrink: 0;
   transition: all var(--duration) var(--ease);
+}
+
+.kb-item-icon--yuque {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.kb-item-icon--global {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
 }
 
 .kb-item.active .kb-item-icon {
@@ -392,6 +478,16 @@ function formatTime(time) {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.doc-icon--yuque {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.doc-icon--global {
+  background: rgba(34, 197, 94, 0.1);
+  color: #16a34a;
 }
 
 .number-cell {

@@ -9,10 +9,10 @@
 <template>
   <el-dialog v-model="visible" title="预览" width="80%" destroy-on-close>
     <div v-loading="previewLoading">
-      <vue-pdf-embed v-show="fileType === 'pdf'" :source="previewUrl" style="height: 70vh;" />
-      <div v-show="fileType === 'docx'" ref="docxRef" style="height: 70vh; overflow: auto;"></div>
-      <div v-show="['xlsx', 'xls'].includes(fileType)" ref="excelRef" style="height: 70vh; overflow: auto;"></div>
-      <pre v-show="['txt', 'md'].includes(fileType)" style="height: 70vh; overflow: auto;">{{ textContent }}</pre>
+      <vue-pdf-embed v-if="fileType === 'pdf'" :source="previewUrl" style="height: 70vh;" />
+      <div v-if="fileType === 'docx'" ref="docxRef" style="height: 70vh; overflow: auto;"></div>
+      <div v-if="['xlsx', 'xls'].includes(fileType)" ref="excelRef" v-html="excelHtml" style="height: 70vh; overflow: auto; border: 1px solid var(--border); padding: 12px;"></div>
+      <pre v-if="['txt', 'md'].includes(fileType)" style="height: 70vh; overflow: auto;">{{ textContent }}</pre>
     </div>
   </el-dialog>
 
@@ -179,7 +179,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue'
 import { uploadDoc, getDocList, deleteDoc, setDocGlobal } from '../../api/doc'
 import { useUserStore } from '../../stores/user'
 import { ElMessage } from 'element-plus'
@@ -204,6 +204,8 @@ const previewLoading = ref(false)
 const docxRef = ref(null)
 const excelRef = ref(null)
 const previewUrl = ref('')
+const excelHtml = ref('')
+
 const handlePreview = async (id, fileName) => {
   const ext = fileName.split('.').pop().toLowerCase()
   const token = localStorage.getItem('token')
@@ -214,14 +216,19 @@ const handlePreview = async (id, fileName) => {
       const res = await fetch(`/api/doc/preview?id=${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
       const buffer = await res.arrayBuffer()
       const workbook = XLSX.read(buffer, { type: 'array' })
+      if (workbook.SheetNames.length === 0) {
+        throw new Error('Excel文件没有工作表')
+      }
       const sheet = workbook.Sheets[workbook.SheetNames[0]]
       const html = XLSX.utils.sheet_to_html(sheet)
+      excelHtml.value = html
       fileType.value = ext
       visible.value = true
-      await nextTick()
-      excelRef.value.innerHTML = html
     } else if (ext === 'docx') {
       const res = await fetch(`/api/doc/preview?id=${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }

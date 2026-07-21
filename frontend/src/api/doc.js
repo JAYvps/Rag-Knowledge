@@ -49,5 +49,5 @@ export function deleteDoc(docId) {
  * @param {boolean} isGlobal 是否设为全局
  */
 export function setDocGlobal(docId, isGlobal) {
-  return request.put(`/admin/doc/${docId}/global`, { isGlobal })
+  return request.put(`/doc/${docId}/global`, { isGlobal })
 }

@@ -48,8 +48,6 @@ public class SecurityConfig {
                         // 放行错误页面，避免403二次报错
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // 管理员接口需要认证（通过方法级权限控制）
-                        .requestMatchers("/api/admin/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

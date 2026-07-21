@@ -1,7 +1,6 @@
 // ============ dto/SourceRef.java ============
 package com.ragkb.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,14 +9,13 @@ import lombok.NoArgsConstructor;
  * 每条引用指向一个检索到的文档分块
  */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class SourceRef {
 
     /** 序号 */
     private int index;
 
-    /** 来源标签: "企业知识库" 或 "我的文档" */
+    /** 来源标签: "企业知识库" / "全局文档" / "我的文档" */
     private String sourceLabel;
 
     /** 来源文档名 */
@@ -28,4 +26,16 @@ public class SourceRef {
 
     /** 相似度分数 */
     private double score;
+
+    /** 来源类型: "yuque" / "user" */
+    private String sourceType;
+
+    /** 来源ID: yuque_doc.id 或 user_document.id */
+    private Long sourceId;
+
+    /** 知识库ID（仅语雀文档有值，用于跳转到知识库页面） */
+    private Long repoId;
+
+    /** 是否全局文档 */
+    private Boolean isGlobal;
 }
