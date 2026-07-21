@@ -1,26 +1,18 @@
 // ============ controller/DocController.java ============
 package com.ragkb.controller;
 
-import cn.hutool.http.server.HttpServerResponse;
 import com.ragkb.common.Result;
 import com.ragkb.entity.UserDocument;
 import com.ragkb.security.UserDetailsImpl;
 import com.ragkb.service.DocUploadService;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.HttpMediaTypeException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
