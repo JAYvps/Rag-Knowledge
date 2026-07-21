@@ -67,6 +67,7 @@ CREATE TABLE `user_document` (
                                  `error_msg`   VARCHAR(500)  COMMENT '失败原因',
                                  `chunk_count` INT           DEFAULT 0,
                                  `word_count`  INT           DEFAULT 0,
+                                 `is_global`   TINYINT       DEFAULT 0 COMMENT '是否全局文档(0否 1是) - 管理员可将就绪文档设为全局',
                                  `created_at`  DATETIME      DEFAULT CURRENT_TIMESTAMP,
                                  `updated_at`  DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                                  INDEX idx_user_id (`user_id`)

@@ -82,6 +82,26 @@ public class VectorService {
     }
 
     /**
+     * 获取向量元数据
+     *
+     * @param id 向量ID
+     * @return 元数据，不存在返回null
+     */
+    public Map<String, String> getMetadata(String id) {
+        return vectorStore.getMetadata(id);
+    }
+
+    /**
+     * 更新向量元数据
+     *
+     * @param id       向量ID
+     * @param metadata 新的元数据
+     */
+    public void updateMetadata(String id, Map<String, String> metadata) {
+        vectorStore.updateMetadata(id, metadata);
+    }
+
+    /**
      * 获取向量总数
      */
     public int size() {

@@ -114,6 +114,18 @@
 
       <!-- Input area -->
       <div class="input-area">
+        <div class="search-scope-bar">
+          <el-switch
+            v-model="searchScopeGlobal"
+            active-text="全局知识库"
+            inactive-text="仅个人文档"
+            :disabled="streaming"
+            class="scope-switch"
+          />
+          <span class="scope-hint">
+            {{ searchScopeGlobal ? '搜索语雀 + 全局 + 个人文档' : '仅搜索个人上传的文档' }}
+          </span>
+        </div>
         <el-input
             v-model="inputText"
             type="textarea"
@@ -202,6 +214,7 @@ const inputText = ref('')
 const streaming = ref(false)
 const streamingContent = ref('')
 const messageListRef = ref(null)
+const searchScopeGlobal = ref(true) // 默认搜索全局知识库
 let currentAbort = null
 let savedRefs = null
 
@@ -262,7 +275,11 @@ function sendMessage() {
   savedRefs = null
 
   currentAbort = askQuestion(
-    { question, conversationId: currentConvId.value },
+    { 
+      question, 
+      conversationId: currentConvId.value,
+      searchScope: searchScopeGlobal.value ? 'global' : 'own'
+    },
     {
       onReferences(refs) { savedRefs = refs },
       onContent(chunk) {
@@ -645,6 +662,23 @@ function scrollToBottom() {
   padding: 16px 24px;
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-elevated);
+}
+
+/* Search scope bar */
+.search-scope-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.scope-switch {
+  flex-shrink: 0;
+}
+
+.scope-hint {
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .chat-input :deep(.el-textarea__inner) {

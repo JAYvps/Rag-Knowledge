@@ -101,6 +101,35 @@
           </template>
         </el-table-column>
 
+        <el-table-column label="全局" width="100" align="center">
+          <template #default="{ row }">
+            <template v-if="isAdmin && row.status === 2">
+              <el-button
+                v-if="row.isGlobal === 1"
+                type="success"
+                text
+                size="small"
+                @click="handleSetGlobal(row.id, false)"
+              >
+                取消全局
+              </el-button>
+              <el-button
+                v-else
+                type="primary"
+                text
+                size="small"
+                @click="handleSetGlobal(row.id, true)"
+              >
+                设为全局
+              </el-button>
+            </template>
+            <el-tag v-else-if="row.isGlobal === 1" type="success" size="small">
+              全局
+            </el-tag>
+            <span v-else class="text-muted">-</span>
+          </template>
+        </el-table-column>
+
         <el-table-column label="分块" width="80" align="center">
           <template #default="{ row }">
             <span class="number-cell">{{ row.status === 2 ? row.chunkCount : '-' }}</span>
@@ -150,12 +179,16 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from 'vue'
-import { uploadDoc, getDocList, deleteDoc } from '../../api/doc'
+import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue'
+import { uploadDoc, getDocList, deleteDoc, setDocGlobal } from '../../api/doc'
+import { useUserStore } from '../../stores/user'
 import { ElMessage } from 'element-plus'
 import VuePdfEmbed from 'vue-pdf-embed'
 import { renderAsync } from 'docx-preview'
 import * as XLSX from 'xlsx'
+
+const userStore = useUserStore()
+const isAdmin = computed(() => userStore.role === 'ADMIN')
 
 const docs = ref([])
 const loading = ref(false)
@@ -284,6 +317,16 @@ async function handleDelete(docId) {
     ElMessage.success('已删除')
     await loadDocs()
   } catch (e) {}
+}
+
+async function handleSetGlobal(docId, isGlobal) {
+  try {
+    await setDocGlobal(docId, isGlobal)
+    ElMessage.success(isGlobal ? '已设为全局文档' : '已取消全局文档')
+    await loadDocs()
+  } catch (e) {
+    // 错误已由 request.js 处理
+  }
 }
 
 function formatSize(bytes) {

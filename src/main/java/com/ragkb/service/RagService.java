@@ -182,36 +182,88 @@ public class RagService {
 
     /**
      * 执行向量检索，获取引用来源
+     *
+     * @param question    用户问题
+     * @param userId      当前用户ID（用于过滤个人文档）
+     * @param searchScope 搜索范围 ("global" 或 "own")
      */
-    public List<SourceRef> retrieve(String question) {
+    public List<SourceRef> retrieve(String question, Long userId, String searchScope) {
         float[] questionVector = embeddingService.embed(question);
         List<VectorSearchResult> allResults = vectorService.search(question, questionVector, RETRIEVE_TOP_K);
-        List<VectorSearchResult> filtered = allResults.stream()
+        
+        // 根据搜索范围过滤
+        List<VectorSearchResult> filtered = filterByScope(allResults, userId, searchScope)
+                .stream()
                 .filter(r -> r.score() >= MIN_SCORE)
                 .limit(TOP_K)
                 .toList();
+        
         return buildSources(filtered);
     }
 
     /**
      * 获取检索结果（带文本内容，用于构建上下文）
      * 动态策略：扩大检索范围，再按阈值截断，避免填充噪声引用
+     *
+     * @param question    用户问题
+     * @param userId      当前用户ID（用于过滤个人文档）
+     * @param searchScope 搜索范围 ("global" 或 "own")
      */
-    public List<VectorSearchResult> retrieveWithContent(String question) {
+    public List<VectorSearchResult> retrieveWithContent(String question, Long userId, String searchScope) {
         float[] questionVector = embeddingService.embed(question);
         List<VectorSearchResult> allResults = vectorService.search(question, questionVector, RETRIEVE_TOP_K);
 
-        // 按分数降序，只保留 >= MIN_SCORE 的结果，最多取 TOP_K 条
-        List<VectorSearchResult> filtered = allResults.stream()
+        // 根据搜索范围过滤
+        List<VectorSearchResult> filtered = filterByScope(allResults, userId, searchScope)
+                .stream()
                 .filter(r -> r.score() >= MIN_SCORE)
                 .limit(TOP_K)
                 .toList();
 
-        log.info("动态检索: question='{}', 召回={}条, 过滤后={}条",
+        log.info("动态检索: question='{}', 召回={}条, 过滤后={}条, scope={}",
                 question.substring(0, Math.min(30, question.length())),
-                allResults.size(), filtered.size());
+                allResults.size(), filtered.size(), searchScope);
 
         return filtered;
+    }
+
+    /**
+     * 根据搜索范围过滤检索结果
+     *
+     * 过滤规则：
+     * - searchScope=global: 语雀文档 + 全局文档 + 个人文档
+     * - searchScope=own: 仅个人文档
+     */
+    private List<VectorSearchResult> filterByScope(
+            List<VectorSearchResult> results, Long userId, String searchScope) {
+        
+        if ("own".equals(searchScope)) {
+            // 仅返回个人文档
+            return results.stream()
+                    .filter(r -> {
+                        String sourceType = r.metadata().getOrDefault("sourceType", "");
+                        String docUserId = r.metadata().getOrDefault("userId", "");
+                        return "user".equals(sourceType) && String.valueOf(userId).equals(docUserId);
+                    })
+                    .toList();
+        } else {
+            // 默认/global: 语雀文档 + 全局文档 + 个人文档
+            return results.stream()
+                    .filter(r -> {
+                        String sourceType = r.metadata().getOrDefault("sourceType", "");
+                        if ("yuque".equals(sourceType)) {
+                            return true; // 语雀文档始终可搜索
+                        }
+                        if ("user".equals(sourceType)) {
+                            String isGlobal = r.metadata().getOrDefault("isGlobal", "false");
+                            String docUserId = r.metadata().getOrDefault("userId", "");
+                            // 全局文档或自己的文档
+                            return "true".equals(isGlobal) || String.valueOf(userId).equals(docUserId);
+                        }
+                        return false;
+                    })
+                    .toList();
+        }
     }
 
     /**
@@ -254,7 +306,13 @@ public class RagService {
                 docTitle = meta.getOrDefault("repoName", "") + " / "
                         + meta.getOrDefault("docTitle", "");
             } else {
-                sourceLabel = "我的文档";
+                // user 类型文档
+                String isGlobal = meta.getOrDefault("isGlobal", "false");
+                if ("true".equals(isGlobal)) {
+                    sourceLabel = "全局文档";
+                } else {
+                    sourceLabel = "我的文档";
+                }
                 docTitle = meta.getOrDefault("docTitle", meta.getOrDefault("fileName", ""));
             }
 

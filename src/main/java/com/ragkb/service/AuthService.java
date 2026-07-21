@@ -2,8 +2,6 @@ package com.ragkb.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ragkb.common.BusinessException;
-import com.ragkb.common.GlobalExceptionHandler;
-import com.ragkb.common.Result;
 import com.ragkb.dto.LoginRequest;
 import com.ragkb.dto.RegisterRequest;
 import com.ragkb.entity.User;
@@ -61,7 +59,6 @@ public class AuthService {
                     userDetails.getUsername(),
                     userDetails.getRole()
             );
-
             Map<String, Object> result = new HashMap<>();
             result.put("token", token);
             result.put("userId", userDetails.getUserId());

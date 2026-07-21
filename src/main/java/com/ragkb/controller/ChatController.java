@@ -73,9 +73,9 @@ public class ChatController {
                     log.error("[对话] 保存用户消息失败", e);
                 }
 
-                // 3. 向量检索
+                // 3. 向量检索（根据搜索范围过滤）
                 List<VectorSearchResult> searchResults =
-                        ragService.retrieveWithContent(req.getQuestion());
+                        ragService.retrieveWithContent(req.getQuestion(), user.getUserId(), req.getSearchScope());
 
                 // 4. 构建引用来源
                 List<SourceRef> sources = ragService.buildSources(searchResults);

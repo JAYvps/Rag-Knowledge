@@ -161,4 +161,25 @@ public class DocController {
         docUploadService.deleteDoc(user.getUserId(), id);
         return Result.ok();
     }
+
+    /**
+     * 管理员设置文档为全局/取消全局
+     *
+     * PUT /api/admin/doc/{id}/global
+     * Body: { "isGlobal": true/false }
+     *
+     * 仅管理员可操作，文档状态必须为"就绪"(status=2)
+     */
+    @PutMapping("/admin/doc/{id}/global")
+    public Result<Void> setGlobal(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> body,
+            @AuthenticationPrincipal UserDetailsImpl user) {
+        Boolean isGlobal = body.get("isGlobal");
+        if (isGlobal == null) {
+            return Result.fail("参数错误");
+        }
+        docUploadService.setGlobal(id, isGlobal);
+        return Result.ok();
+    }
 }

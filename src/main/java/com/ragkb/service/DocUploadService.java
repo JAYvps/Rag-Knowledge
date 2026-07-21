@@ -136,6 +136,44 @@ public class DocUploadService {
         return userDocMapper.selectById(docId);
     }
 
+    // ==================== 全局文档管理 ====================
+
+    /**
+     * 设置文档为全局/取消全局
+     * 
+     * @param docId    文档ID
+     * @param isGlobal 是否设为全局
+     */
+    public void setGlobal(Long docId, boolean isGlobal) {
+        UserDocument doc = userDocMapper.selectById(docId);
+        if (doc == null) {
+            throw new BusinessException("文档不存在");
+        }
+        if (doc.getStatus() != 2) {
+            throw new BusinessException("只有状态为\"就绪\"的文档才能设为全局");
+        }
+
+        // 更新数据库
+        doc.setIsGlobal(isGlobal ? 1 : 0);
+        userDocMapper.updateById(doc);
+
+        // 更新向量元数据中的 isGlobal 标记
+        List<DocumentChunk> chunks = chunkMapper.selectBySource("user", docId);
+        for (DocumentChunk chunk : chunks) {
+            if (chunk.getVectorId() != null) {
+                // 获取现有向量并更新元数据
+                Map<String, String> metadata = vectorService.getMetadata(chunk.getVectorId());
+                if (metadata != null) {
+                    metadata.put("isGlobal", String.valueOf(isGlobal));
+                    vectorService.updateMetadata(chunk.getVectorId(), metadata);
+                }
+            }
+        }
+
+        log.info("[全局文档] {}: docId={}, title={}", 
+                isGlobal ? "设为全局" : "取消全局", docId, doc.getTitle());
+    }
+
     // ==================== 删除 ====================
 
     /**

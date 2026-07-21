@@ -52,6 +52,11 @@
             <el-icon><ChatDotRound /></el-icon>
             <span>智能问答</span>
           </el-menu-item>
+
+          <el-menu-item v-if="userStore.role === 'ADMIN'" index="/admin/sync">
+            <el-icon><Setting /></el-icon>
+            <span>同步管理</span>
+          </el-menu-item>
         </el-menu>
       </div>
 
@@ -72,6 +77,7 @@
           <h1 class="page-title">{{ currentTitle }}</h1>
         </div>
         <div class="header-right">
+          <span class="current-user">{{ userStore.username }}</span>
           <el-button text class="logout-btn" @click="handleLogout">
             <el-icon><SwitchButton /></el-icon>
             退出
@@ -105,7 +111,7 @@ let ctx
 const activeMenu = computed(() => route.path)
 
 const currentTitle = computed(() => {
-  const titles = { '/': '首页', '/kb': '知识库', '/docs': '我的文档', '/chat': '智能问答' }
+  const titles = { '/': '首页', '/kb': '知识库', '/docs': '我的文档', '/chat': '智能问答', '/admin/sync': '同步管理' }
   return titles[route.path] || 'RAG 知识库'
 })
 
@@ -292,6 +298,13 @@ onUnmounted(() => { ctx?.revert() })
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 0;
+}
+
+.current-user {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-right: 12px;
 }
 
 .logout-btn {

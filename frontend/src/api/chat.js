@@ -22,10 +22,22 @@ export function deleteConversation(conversationId) {
  *
  * SSE不能用axios（axios不支持text/event-stream）
  * 所以这里用fetch手动处理，手动带Token
+ *
+ * @param {Object} params - 请求参数
+ * @param {string} params.question - 用户问题
+ * @param {number} params.conversationId - 对话ID（可选）
+ * @param {string} params.searchScope - 搜索范围: "global" 或 "own"（可选，默认"global"）
+ * @param {Object} callbacks - 回调函数
  */
 export function askQuestion(params, callbacks) {
     const controller = new AbortController()
     let doneReceived = false  // ← 新增
+
+    // 确保 searchScope 有默认值
+    const requestBody = {
+        ...params,
+        searchScope: params.searchScope || 'global'
+    }
 
     fetch('/api/chat/ask', {
         method: 'POST',
@@ -33,7 +45,7 @@ export function askQuestion(params, callbacks) {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem('token')
         },
-        body: JSON.stringify(params),
+        body: JSON.stringify(requestBody),
         signal: controller.signal
     })
         .then(response => {

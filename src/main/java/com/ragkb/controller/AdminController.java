@@ -35,9 +35,12 @@ public class AdminController {
         if (user == null) {
             return Result.fail("未登录");
         }
-        // TODO: 后续可加管理员权限校验
-        List<YuqueRepo> repos = kbService.listAllRepos();
-        return Result.ok(repos);
+
+        if(user.getUserId() == 1){
+            List<YuqueRepo> repos = kbService.listAllRepos();
+            return Result.ok(repos);
+        }
+        return Result.fail("无权限");
     }
 
     /**

@@ -6,11 +6,11 @@ spring:
     active: dev
   ai:
     openai:
-      api-key: ${sk-611fd0d69a244fb0a3d941e5161fc4ce}
-      base-url: ${AI_BASE_URL:https://llm-miv4nmllqj53ujdx.cn-beijing.maas.aliyuncs.com/compatible-mode/v1}
+      api-key: ${AI_KEY:sk-27c13096feaf4d6f9e0722be76ef843e}
+      base-url: ${AI_BASE_URL:https://llm-miv4nmllqj53ujdx.cn-beijing.maas.aliyuncs.com/compatible-mode/}
       chat:
         options:
-          model: ${AI_MODEL:qwen3.6-flash}
+          model: ${AI_MODEL:qwen3.6-27b}
           temperature: 0.7
           #embedding配置
       embedding:

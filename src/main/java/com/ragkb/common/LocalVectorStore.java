@@ -227,6 +227,49 @@ public class LocalVectorStore {
         }
     }
 
+    /**
+     * 获取向量条目的元数据
+     *
+     * @param id 向量ID
+     * @return 元数据副本，不存在返回null
+     */
+    public Map<String, String> getMetadata(String id) {
+        lock.readLock().lock();
+        try {
+            Integer index = idIndex.get(id);
+            if (index == null || index >= entries.size()) {
+                return null;
+            }
+            VectorEntry entry = entries.get(index);
+            return entry.getMetadata() != null ? new HashMap<>(entry.getMetadata()) : new HashMap<>();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    /**
+     * 更新向量条目的元数据
+     *
+     * @param id       向量ID
+     * @param metadata 新的元数据
+     */
+    public void updateMetadata(String id, Map<String, String> metadata) {
+        lock.writeLock().lock();
+        try {
+            Integer index = idIndex.get(id);
+            if (index == null || index >= entries.size()) {
+                log.warn("向量不存在: id={}", id);
+                return;
+            }
+            VectorEntry entry = entries.get(index);
+            entry.setMetadata(metadata);
+            saveToFile();
+            log.debug("向量元数据已更新: id={}", id);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
     // ==================== 检索操作 ====================
 
     /**

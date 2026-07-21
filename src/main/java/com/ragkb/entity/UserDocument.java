@@ -58,6 +58,9 @@ public class UserDocument {
     //@TableLogic
     private Integer isDeleted;
 
+    /** 是否全局文档（0否 1是）- 管理员可将就绪文档设为全局，所有用户可搜索 */
+    private Integer isGlobal;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

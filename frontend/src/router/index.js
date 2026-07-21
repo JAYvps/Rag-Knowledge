@@ -1,25 +1,8 @@
 // ============ src/router/index.js（加入对话路由） ============
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import component from 'element-plus/es/components/tree-select/src/tree-select-option.mjs'
 
 const routes = [
-    {
-        path: '/admin/sync',
-        title: '同步管理',
-        icon: 'Setting',
-        name: 'SyncManage',
-        component: () => import('../views/admin/SyncManageView.vue'),
-        meta: { title: '同步管理' }
-    },
-    {
-        path: '/admin/sync',
-        name: 'SyncManage',
-        component: () => import('../views/admin/SyncManageView.vue'),
-        meta: { title: '同步管理' }
-    }
-
-    ,
     {
         path: '/login',
         name: 'Login',
@@ -38,11 +21,6 @@ const routes = [
         meta: { requiresAuth: true },
         children: [
             {
-                path: 'docs',
-                name: 'MyDocs',
-                component: () => import('../views/doc/MyDocsView.vue')
-            },
-            {
                 path: '',
                 name: 'Home',
                 component: () => import('../views/HomeView.vue')
@@ -53,9 +31,20 @@ const routes = [
                 component: () => import('../views/kb/KbView.vue')
             },
             {
+                path: 'docs',
+                name: 'MyDocs',
+                component: () => import('../views/doc/MyDocsView.vue')
+            },
+            {
                 path: 'chat/:conversationId?',
                 name: 'Chat',
                 component: () => import('../views/chat/ChatView.vue')
+            },
+            {
+                path: 'admin/sync',
+                name: 'SyncManage',
+                component: () => import('../views/admin/SyncManageView.vue'),
+                meta: { title: '同步管理' }
             }
         ]
     }

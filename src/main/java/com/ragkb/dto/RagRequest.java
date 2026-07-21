@@ -15,4 +15,11 @@ public class RagRequest {
 
     /** 对话ID（为空则新建对话） */
     private Long conversationId;
+
+    /**
+     * 搜索范围
+     * - "global"（默认）: 搜索语雀文档 + 全局文档 + 个人文档
+     * - "own": 仅搜索个人文档
+     */
+    private String searchScope = "global";
 }

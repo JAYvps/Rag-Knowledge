@@ -42,3 +42,12 @@ export function getDocStatus(docId) {
 export function deleteDoc(docId) {
   return request.delete(`/doc/${docId}`)
 }
+
+/**
+ * 管理员设置文档为全局/取消全局
+ * @param {number} docId 文档ID
+ * @param {boolean} isGlobal 是否设为全局
+ */
+export function setDocGlobal(docId, isGlobal) {
+  return request.put(`/admin/doc/${docId}/global`, { isGlobal })
+}
